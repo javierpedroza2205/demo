@@ -17,18 +17,25 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 
-import { ToggleButton } from '@mui/material';
+import { InputLabel, TextField, ToggleButton } from '@mui/material';
 import { ToggleButtonGroup } from '@mui/material';
-import { Input } from '@material-ui/core';
+import { useFormControl } from '@mui/material/FormControl';
+import { Button } from 'react-bootstrap';
+import { Icon, Input, InputAdornment } from '@material-ui/core';
+import { AccountCircle } from '@material-ui/icons';
+import PaidIcon from '@mui/icons-material/Paid';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 
 function Users() {
 
     const [flagv2, setFlagv2] = useState(false);
+    const [valueToggle, setValueToggle] = useState("Prestamos")
+    const [show, setShow] = useState(true);
 
 
     useEffect( () => {
-        setFlagv2(false)
+        setFlagv2(true)
     },[]);
 
 
@@ -65,6 +72,10 @@ function Users() {
         ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
       };
 
+    
+
+    
+
   return (
     <div>
       <Header
@@ -72,13 +83,15 @@ function Users() {
       />
       {flagv2 &&
         <ToggleButtonGroup
-        color="primary"
-        exclusive
-      >
+            color="primary"
+            exclusive
+            value={valueToggle}
+            onChange={e => setValueToggle(e.target.value)}
+        >
         
-        <Input value="Prestamos">Prestamos</Input>
-        <Input value="Inversiones" style={{marginLeft:".5rem"}}>Inversiones</Input>
-        <Input style={{marginLeft:"30rem"}} value="Configuracion">Configuracion</Input>
+        <ToggleButton value="Prestamos">Prestamos</ToggleButton>
+        <ToggleButton value="Inversiones">Inversiones</ToggleButton>
+        <ToggleButton value="Configuracion">Configuracion</ToggleButton>
       </ToggleButtonGroup>
 
 
@@ -92,7 +105,50 @@ function Users() {
         icons={tableIcons}
         />  
       }
-           
+      {valueToggle === "Prestamos" &&
+        <div>
+            Prestamos segment
+        </div>
+      }
+      {valueToggle === "Inversiones" &&
+        <div>
+            <div>
+                <TextField label="Monto a simular" type={"number"} style={{margin: "5%"}} focused/>
+                <Button style={{height:"fit-content", margin: "4.5%", float:"right"}}>Simular Inversion</Button>
+
+            </div>
+            <br/>
+            <div style={{textAlign:"right"}}>
+            <Input
+                placeholder='Pesos'
+                startAdornment={
+                    <InputAdornment position='start'>
+                        <PaidIcon />
+                    </InputAdornment>
+                }
+            />
+            </div>
+            <div style={{display:"flex"}}>
+                <div style={{width:"50%"}}>
+                    <MaterialTable
+                        title={"Users"}
+                        data={state.data}
+                        columns={state.columns}
+                        icons={tableIcons}
+                    /> 
+                </div>
+                <div style={{width:"50%"}}>
+                    <img style={{width:"30%", height: "40%", background:"whiteSmoke", position:"absolute", margin:"10%"}} hidden={!show}></img>
+                    <VisibilityIcon style={{left:"60%", position:"absolute", bottom:"25%"}} onClick={ () => setShow(!show)} />
+                </div>
+            </div> 
+        </div>
+      }
+      {valueToggle === "Configuracion" &&
+        <div>
+            Configuracion segment
+        </div>
+      } 
     </div>
   );
 }
