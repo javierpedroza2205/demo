@@ -19,38 +19,131 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 
 import { InputLabel, TextField, ToggleButton } from '@mui/material';
 import { ToggleButtonGroup } from '@mui/material';
-import { useFormControl } from '@mui/material/FormControl';
 import { Button } from 'react-bootstrap';
-import { Icon, Input, InputAdornment } from '@material-ui/core';
-import { AccountCircle } from '@material-ui/icons';
 import PaidIcon from '@mui/icons-material/Paid';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+
+import API from '../../services/API';
 
 
 function Users() {
 
-    const [flagv2, setFlagv2] = useState(false);
+    const [release, setNewRelease] = useState();
+    const [userList, setUserList] = useState([]);
+    const [prestamoList, setPrestamoList] = useState([]);
+    const [inersionInfo, setInverisonInfo] = useState([])
+
+    const [disableLoads, setDisableLoads] = useState(false);
+
     const [valueToggle, setValueToggle] = useState("Prestamos")
     const [show, setShow] = useState(true);
 
 
     useEffect( () => {
-        setFlagv2(true)
+        //getVersion() descomentar para prod
+        setNewRelease(true)
+        getUsers()
+        getPrestamos()
+        getInversion()
     },[]);
 
+    function getVersion() {
+      API.getVersion().
+      then(response => {
+        setNewRelease(response.data.new_release) // value can true or false
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
+
+    function getUsers() {
+      API.getUsers()
+      .then(response => {
+        setUserList(response.data)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
+
+    function getPrestamos() {
+      API.getPrestamo()
+      .then(response => {
+        setPrestamoList(response.data)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
+
+    function getInversion() {
+      API.getInversion()
+      .then(response => {
+        setInverisonInfo(response.data)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
+
+    // butons funcions
+    function pay() {
+      API.createPayment()
+      .then(res => {
+        console.log(res.data)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
+
+    function prestamosSimular() {
+      API.populate()
+      .then(res => {
+        getPrestamos()
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
+
+    const sleep = (milliseconds) => {
+      return new Promise(resolve => setTimeout(resolve, milliseconds))
+    }
+
+    async function sendLoad() {
+      setDisableLoads(true)
+      API.chargeInfo()
+      await sleep(50000)
+      API.chargeInfo()
+      await sleep(50000)
+      API.chargeInfo()
+      await sleep(50000)
+      API.chargeInfo()
+      .then(res => {
+        setDisableLoads(false)
+      })
+    }
 
     const [state, setState] = useState({
-        columns: [
-          { title: 'Name', field: 'name' },
-          { title: 'User', field: 'user' },
-          { title: 'Amount', field: 'amount',},
-          { title: 'ID', field: 'id',},
+        columns: [ // columns users version 1
+          { title: 'Name', field: 'nombre' },
+          { title: 'Last name', field: 'apellido' },
+          { title: 'User', field: 'username' },
+          { title: 'Amount', field: 'monto_solicitado',},
         ],
-        data: [
+        columnsPrestamo: [
+          {title : 'User', field: 'usuario'},
+          {title : 'Plazo', field: 'plazo'},
+          {title : 'Interes', field: 'interes'},
+          {title : 'Monto', field: 'monto'},
+        ],
+        /*data: [
           { name: 'Juan', user: 'Juanito123', amount: "2000", id: 63 }, 
           { name: 'Rick', user: 'ricknepe', amount: "30202", id: 23 }, 
           { name: 'Jazu', user: 'cat123', amount: "3093", id: 21 }, 
-        ],
+        ],*/
       });
 
       const tableIcons = {
@@ -79,9 +172,9 @@ function Users() {
   return (
     <div>
       <Header
-        version={"1.0.0"}
+        version={release === true ? "2.0.0": "1.0.0"}
       />
-      {flagv2 &&
+      {release &&
         <ToggleButtonGroup
             color="primary"
             exclusive
@@ -91,48 +184,54 @@ function Users() {
         
         <ToggleButton value="Prestamos">Prestamos</ToggleButton>
         <ToggleButton value="Inversiones">Inversiones</ToggleButton>
-        <ToggleButton value="Configuracion">Configuracion</ToggleButton>
       </ToggleButtonGroup>
 
 
 
       }
-      {!flagv2 &&
+      {!release &&
         <MaterialTable
         title={"Users"}
-        data={state.data}
+        data={userList}
         columns={state.columns}
         icons={tableIcons}
         />  
       }
-      {valueToggle === "Prestamos" &&
-        <div>
-            Prestamos segment
+      {(valueToggle === "Prestamos" && release) &&
+        <div style={{display : "flex"}}>
+            <div style={{width: "fit-content"}}>
+              <MaterialTable
+              title={"Prestamos"}
+              data={prestamoList}
+              columns={state.columnsPrestamo}
+              icons={tableIcons}
+              />
+            </div>
+            <div style={{width: "-webkit-fill-available"}}>
+              <div style={{display: "grid", float: "right"}}>
+                <Button onClick={() => sendLoad()} style={{height:"fit-content", margin: "4.5%", float:"right"}} disabled={disableLoads}>Simular Carga</Button>
+                <Button onClick={() => prestamosSimular()} style={{height:"fit-content", margin: "4.5%", float:"right"}}>Simular Prestamos</Button>
+                <Button onClick={() => pay()} style={{height:"fit-content", margin: "4.5%", float:"right"}}>Simular Pagos</Button>
+
+              </div>
+            </div>  
         </div>
       }
-      {valueToggle === "Inversiones" &&
+      {(valueToggle === "Inversiones" && release) &&
         <div>
             <div>
-                <TextField label="Monto a simular" type={"number"} style={{margin: "5%"}} focused/>
-                <Button style={{height:"fit-content", margin: "4.5%", float:"right"}}>Simular Inversion</Button>
-
+              <p>Monto recuperado: {inersionInfo.monto_recuperado}</p>
+              <p>Monto Invertido: {inersionInfo.monto_inversion}</p>
             </div>
-            <br/>
-            <div style={{textAlign:"right"}}>
-            <Input
-                placeholder='Pesos'
-                startAdornment={
-                    <InputAdornment position='start'>
-                        <PaidIcon />
-                    </InputAdornment>
-                }
-            />
+            <div>
+                <TextField label="Monto a simular" type={"number"}   focused/>
+                <Button style={{height:"fit-content", marginLeft: "2rem"}}>Simular Inversion</Button>
             </div>
             <div style={{display:"flex"}}>
                 <div style={{width:"50%"}}>
                     <MaterialTable
                         title={"Users"}
-                        data={state.data}
+                        data={userList}
                         columns={state.columns}
                         icons={tableIcons}
                     /> 
@@ -144,11 +243,6 @@ function Users() {
             </div> 
         </div>
       }
-      {valueToggle === "Configuracion" &&
-        <div>
-            Configuracion segment
-        </div>
-      } 
     </div>
   );
 }
